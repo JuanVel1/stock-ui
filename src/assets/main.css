@@ -1,0 +1,46 @@
+@import 'tailwindcss';
+
+#app {
+  font-weight: normal;
+  padding-left: 0px;
+  padding-right: 0px;
+}
+
+.mask-gradient {
+  mask-image: linear-gradient(
+    to bottom right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.5) 70%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom right,
+    transparent 0%,
+    rgba(0, 0, 0, 0.5) 70%,
+    rgba(0, 0, 0, 0.8) 100%
+  );
+}
+
+a,
+.green {
+  text-decoration: none;
+  color: hsla(160, 100%, 37%, 1);
+  transition: 0.4s;
+}
+
+@media (hover: hover) {
+  a:hover {
+    background-color: hsla(160, 100%, 37%, 0.2);
+  }
+}
+
+@media (min-width: 1024px) {
+  body {
+    display: flex;
+    place-items: center;
+  }
+
+  #app {
+    width: 100%;
+  }
+}
