@@ -2,6 +2,23 @@
 
 ¡Bienvenido a **StockGenius**! Este proyecto es una aplicación web interactiva que permite a los usuarios explorar datos bursátiles en tiempo real, crear carteras virtuales, comparar rendimientos con índices de mercado y analizar la diversificación de sus inversiones. 🚀
 
+![image](https://github.com/user-attachments/assets/399e3a64-f463-4451-be10-1dcac046d117)
+
+# 🌟 Características
+📊 Dashboard interactivo: Filtra y ordena datos bursátiles en tiempo real.
+📈 Comparación con índices: Compara tu cartera con índices como S&P 500, NASDAQ y Dow Jones.
+
+![image](https://github.com/user-attachments/assets/6404073d-fc42-40e7-a8be-78b4f9d2c505)
+
+💼 Simulador de inversiones: Crea carteras virtuales y analiza su rendimiento.
+
+![image](https://github.com/user-attachments/assets/2f921245-fe24-45fb-b712-23102c6da407)
+
+🧠 Análisis de diversificación: Evalúa si tu cartera está bien diversificada.
+🔍 Búsqueda avanzada: Encuentra acciones rápidamente con sugerencias en tiempo real.
+
+![image](https://github.com/user-attachments/assets/72e104bc-9fd3-47bb-a404-eed92a41442e)
+
 ---
 
 ## 🛠️ Instalación
@@ -36,14 +53,6 @@ npm run lint:eslint
 **Formatear con Prettier**:
 npm run format
 
-🌟 Características
-📊 Dashboard interactivo: Filtra y ordena datos bursátiles en tiempo real.
-💼 Simulador de inversiones: Crea carteras virtuales y analiza su rendimiento.
-📈 Comparación con índices: Compara tu cartera con índices como S&P 500, NASDAQ y Dow Jones.
-🧠 Análisis de diversificación: Evalúa si tu cartera está bien diversificada.
-🔍 Búsqueda avanzada: Encuentra acciones rápidamente con sugerencias en tiempo real.
-🖼️ Capturas de Pantalla
-Dashboard de Stocks
 
 # Simulador de Inversiones
 
@@ -54,3 +63,4 @@ Testing: Vitest
 Construcción: Vite
 Linter: ESLint, Oxlint
 Formateo: Prettier
+
