@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import InvestmentSimulator from './components/InvestmentSimulator.vue' // Importa el componente
-import { useStocksStore } from './stores/stocks'; // Importa tu store de stocks
+import { useStocksStore } from './stores/stocks' // Importa tu store de stocks
 import { storeToRefs } from 'pinia'
+import PerformanceChart from './components/PerformanceChart.vue'
 
-const stocksStore = useStocksStore(); 
+const stocksStore = useStocksStore()
 const { topPicks, loading } = storeToRefs(stocksStore)
+const selectedStock = ref<Stock | null>(null)
+const isModalOpen = ref(false)
 
 // Tipos de datos
 interface Stock {
@@ -20,7 +23,7 @@ interface Stock {
   rating?: string // Marked as optional or added if missing
   volatility?: string
   action?: string
-  time?: string 
+  time?: string
   upside?: number // Added the missing 'upside' property
   confidence?: number // Added the missing 'confidence' property
 }
@@ -36,11 +39,12 @@ const resetFilters = () => {
   showToast('Filtros reiniciados', 'info')
 }
 
-
 // // Data
 const currentPage = ref(1)
 const itemsPerPage = 10
-const sortKey = ref<'ticker' | 'company' | 'price' | 'change' | 'rating_to' | 'volatility' | 'rating'>('ticker') // Include 'rating' in valid keys
+const sortKey = ref<
+  'ticker' | 'company' | 'price' | 'change' | 'rating_to' | 'volatility' | 'rating'
+>('ticker') // Include 'rating' in valid keys
 const sortDesc = ref(false)
 const searchQuery = ref('')
 const selectedStocks = ref<
@@ -50,7 +54,7 @@ const selectedStocks = ref<
     price: string
     change: number
     rating: string
-    volatility: string 
+    volatility: string
     upside: number
   }[]
 >([])
@@ -96,7 +100,9 @@ const filteredStocks = computed(() => {
     result = result.filter((stock) => activeFilters.value.rating.includes(stock.rating_to))
   }
   if (activeFilters.value.volatility.length > 0) {
-    result = result.filter((stock) => activeFilters.value.volatility.includes(stock.volatility ?? ''))
+    result = result.filter((stock) =>
+      activeFilters.value.volatility.includes(stock.volatility ?? ''),
+    )
   }
   if (activeFilters.value.upside.length > 0) {
     result = result.filter((stock) => {
@@ -185,8 +191,8 @@ const sortTable = (key: 'ticker' | 'company' | 'price' | 'change' | 'rating' | '
   showToast(`Sorted by ${key}`, 'info')
 }
 
-const showStockDetail = (stock: any) => {
-  showToast(`Viewing details for ${stock.ticker}`, 'info')
+const showStockDetail = (stock: Stock) => {
+  selectedStock.value = stock
 }
 
 const isStockSelected = (stock: any) => {
@@ -205,14 +211,14 @@ const toggleSelectAll = () => {
   if (isAllSelected.value) {
     selectedStocks.value = []
   } else {
-    selectedStocks.value = paginatedStocks.value.map(stock => ({
+    selectedStocks.value = paginatedStocks.value.map((stock) => ({
       ticker: stock.ticker,
       company: stock.company,
       price: stock.price,
       change: stock.change,
-      rating: stock.rating_to,  
-      volatility: stock.volatility ?? 'Unknown',  
-      upside: stock.upside ?? 0  
+      rating: stock.rating_to,
+      volatility: stock.volatility ?? 'Unknown',
+      upside: stock.upside ?? 0,
     }))
   }
 }
@@ -236,7 +242,6 @@ const suggestions = computed(() => {
   if (!searchQuery.value) return []
   const query = searchQuery.value.toLowerCase()
 
-  // Ejemplo: sugerir basándose en el ticker o el nombre de la empresa
   return stocksStore.stocks
     .filter(
       (stock) =>
@@ -245,15 +250,14 @@ const suggestions = computed(() => {
     .slice(0, 5) // Limitar a las 5 primeras sugerencias
 })
 
-// Función para seleccionar una sugerencia
 const selectSuggestion = (suggestion: { ticker: string; company: string }) => {
   searchQuery.value = suggestion.ticker
   showSuggestions.value = false
 }
 
-onMounted(async () => { 
+onMounted(async () => {
   await stocksStore.fetchRecommendations()
-  await stocksStore.fetchStocks();
+  await stocksStore.fetchStocks()
   showToast('Data loaded successfully', 'success')
 })
 
@@ -275,6 +279,22 @@ const exportToCSV = () => {
   link.setAttribute('download', 'stocks.csv')
   document.body.appendChild(link)
   link.click()
+}
+
+const loadNextPage = async () => {
+  if (stocksStore.pagination.hasMore) {
+    await stocksStore.fetchStocks(stocksStore.pagination.nextOffset)
+  }
+}
+
+const openModal = (stock: any) => {
+  selectedStock.value = stock
+  isModalOpen.value = true
+}
+
+const closeModal = () => {
+  isModalOpen.value = false
+  selectedStock.value = null
 }
 </script>
 
@@ -585,6 +605,13 @@ const exportToCSV = () => {
             Siguiente
           </button>
           <button
+            @click="loadNextPage"
+            :disabled="!stocksStore.pagination.hasMore"
+            class="rounded-md border border-gray-300 px-3 py-1 text-sm disabled:opacity-50"
+          >
+            traer más stocks
+          </button>
+          <button
             @click="exportToCSV"
             :disabled="selectedStocks.length === 0"
             class="hover:bg-amber-200 hover:cursor-pointer rounded-md border border-amber-700 px-3 py-1 text-sm disabled:opacity-50 bg-amber-300"
@@ -604,27 +631,28 @@ const exportToCSV = () => {
           </p>
         </div>
 
+        <!-- Top Picks -->
         <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           <div
-            v-for="stock in topPicks"
-            :key="stock.ticker"
+            v-for="(recommendation, index) in stocksStore.topPicks"
+            :key="index"
             class="group overflow-hidden rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-all hover:scale-105 hover:shadow-md hover:shadow-blue-500/50 hover:cursor-pointer"
-            @click="showStockDetail(stock)"
+            @click="openModal(recommendation)"
           >
             <div class="mb-4 flex items-start justify-between">
               <div>
-                <h3 class="text-lg font-bold text-gray-900">{{ stock.ticker }}</h3>
-                <p class="text-sm text-gray-600">{{ stock.company }}</p>
+                <h3 class="text-lg font-bold text-gray-900">{{ recommendation.ticker }}</h3>
+                <p class="text-sm text-gray-600">{{ recommendation.company }}</p>
               </div>
               <div
                 class="rounded-full bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800"
               >
-                +{{ stock.upside }}%
+                +{{ recommendation.upside }}%
               </div>
             </div>
 
             <div
-              v-if="(stock.upside ?? 0) > 15"
+              v-if="(recommendation.upside ?? 0) > 15"
               class="mb-4 inline-block rounded-md bg-amber-200 px-2 py-1 text-xs font-semibold text-amber-800"
             >
               Top Pick
@@ -637,7 +665,7 @@ const exportToCSV = () => {
                   v-for="i in 5"
                   :key="i"
                   class="h-2 w-8 first:rounded-l-full last:rounded-r-full"
-                  :class="i <= (stock.confidence ?? 0) ? 'bg-blue-500' : 'bg-gray-200'"
+                  :class="i <= (recommendation.confidence ?? 0) ? 'bg-blue-500' : 'bg-gray-200'"
                 ></div>
               </div>
             </div>
@@ -646,24 +674,74 @@ const exportToCSV = () => {
       </div>
     </section>
 
+    <!-- Modal -->
+    <div
+      v-if="isModalOpen"
+      class="fixed top-0 left-0 z-50 flex h-full w-full items-center justify-center bg-black bg-opacity-50"
+    >
+      <div class="w-11/12 max-w-xl rounded-lg bg-white p-6 shadow-lg">
+        <h2 class="mb-4 text-2xl font-bold">
+          {{ selectedStock?.ticker }} - {{ selectedStock?.company }}
+        </h2>
+        <p>Upside: {{ selectedStock?.upside }}%</p>
+        <p>Confidence: {{ selectedStock?.confidence }}</p>
+
+        <!-- Performance Chart -->
+        <PerformanceChart timeRange="1Y" 
+          :data="{
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+            datasets: [
+              {
+                label: 'Performance',
+                data: [65, 59, 80, 81, 56],
+                fill: false,
+                borderColor: '#4F46E5',
+                tension: 0.1,
+              },
+            ],
+          }"
+          :options="{
+            responsive: true,
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top',
+              },
+            },
+          }"
+          :height="200"
+          :width="400"
+        />
+
+        <button @click="closeModal" class="mt-4 rounded-md bg-gray-200 px-4 py-2">Cerrar</button>
+      </div>
+    </div>
+
     <section class="bg-gray-50 py-16">
       <div class="container mx-auto px-4">
         <h2 class="mb-2 text-3xl font-bold text-gray-900">Simulador de Inversión</h2>
-        <p class="text-lg text-gray-600  inset-0">
-          Crea carteras ficticias, rastrea tu rendimiento comparado con índices y analiza la diversificación.</p>
-        
-          <div class="flex flex-row mt-2 align-middle justify-center">
-            <InvestmentSimulator :stocks-data="stocksStore.stocks"/>
-          <div class="flex flex-col px-2 py-2 justify-center text-center">
-            <img src="https://images.pexels.com/photos/7095765/pexels-photo-7095765.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="Imagen de inversion" class="scale-100 rounded-2xl h-full opacity-90" />
+        <p class="text-lg text-gray-600 inset-0">
+          Crea carteras ficticias, rastrea tu rendimiento comparado con índices y analiza la
+          diversificación.
+        </p>
+
+        <div class="flex flex-col md:flex-row mt-2 align-middle justify-center">
+          <div class="w-full md:w-1/2 mb-4 md:mb-0">
+            <InvestmentSimulator :stocks-data="stocksStore.stocks" />
+          </div>
+          <div class="w-full md:w-1/2 px-2">
+            <img
+              src="https://images.pexels.com/photos/7095765/pexels-photo-7095765.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
+              alt="Imagen de inversion"
+              class="w-full rounded-2xl opacity-90"
+            />
             <p class="mt-4 text-sm text-gray-500 px-2">
-            *Nota: Los resultados son simulaciones y no garantizan rendimientos futuros.
-          </p>
+              *Nota: Los resultados son simulaciones y no garantizan rendimientos futuros.
+            </p>
           </div>
         </div>
-
       </div>
-    </section class="bg-gray-50 py-16">
+    </section>
     <footer
       class="text-white border-t-4 border-t-blue-950 bg-gradient-to-tl from-blue-900 to-blue-500 false py-8"
     >

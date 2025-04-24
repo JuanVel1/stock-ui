@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
+const db_url = import.meta.env.VITE_DB_URL || ''  
+
 interface Stock {
   ticker: string
   company: string
@@ -24,6 +26,13 @@ interface State {
   recommendations: Stock[]
   loadingRecommendations: boolean
   errorRecommendations: string | null
+  pagination: {
+    currentOffset: number
+    perPage: number
+    total: number
+    hasMore: boolean
+    nextOffset: number
+  }
 }
 
 // Helper functions
@@ -40,6 +49,13 @@ export const useStocksStore = defineStore('stocks', {
     stocks: [],
     loading: false,
     error: null,
+    pagination: {
+      currentOffset: 0,
+      perPage: 50,
+      total: 0,
+      hasMore: false,
+      nextOffset: 0
+    },
     recommendations: [],
     loadingRecommendations: false,
     errorRecommendations: null,
@@ -49,13 +65,19 @@ export const useStocksStore = defineStore('stocks', {
     topPicks: (state) => state.recommendations,
   },
   actions: {
-    async fetchStocks() {
+    async fetchStocks(offset?: number) {
       this.loading = true
       this.error = null
       try {
-        const response = await axios.get('http://localhost:8081/api/stocks')
-        this.stocks = response.data.map((stock: any) => ({
-          // Ajusta el mapeo según tu API
+        const response = await axios.get(`${db_url}stocks`, {
+          params: {
+            next: offset || 0,
+            limit: 50
+          }
+        })
+        
+        // Convertir los nuevos stocks
+        const newStocks = response.data.data.map((stock: any) => ({ 
           ticker: stock.ticker,
           company: stock.company,
           price: stock.target_to,
@@ -68,6 +90,21 @@ export const useStocksStore = defineStore('stocks', {
                 ? 'Media'
                 : 'Baja',
         }))
+
+        // Acumular los stocks en lugar de reemplazarlos
+        if (offset && offset > 0) {
+          this.stocks = [...this.stocks, ...newStocks]
+        } else {
+          this.stocks = newStocks
+        }
+
+        this.pagination = {
+          currentOffset: response.data.pagination.current_offset,
+          perPage: response.data.pagination.per_page,
+          total: response.data.pagination.total,
+          hasMore: response.data.pagination.has_more,
+          nextOffset: response.data.pagination.next_offset
+        }
       } catch (error: any) {
         this.error = 'Error loading stock data'
         console.error('Error fetching stocks:', error)
@@ -79,7 +116,7 @@ export const useStocksStore = defineStore('stocks', {
       this.loadingRecommendations = true
       this.errorRecommendations = null
       try {
-        const response = await axios.get('http://localhost:8081/api/recommendations')
+        const response = await axios.get(db_url + 'recommendations')
         this.recommendations = response.data.map((stock: any) => ({
           ticker: stock.ticker,
           company: stock.company,

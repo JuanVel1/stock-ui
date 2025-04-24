@@ -97,46 +97,51 @@ const analyzeDiversification = () => {
 }
 </script>
 <template>
-  <div class="investment-simulator p-6 bg-zinc-50 rounded-lg shadow-md">
+  <div class="investment-simulator p-4 sm:p-6 bg-zinc-50 rounded-lg shadow-md">
     <h2 class="text-xl font-semibold mb-4">Crea tu Cartera Virtual</h2>
 
     <div class="mb-4">
       <p class="text-gray-600 mb-2">Saldo disponible: ${{ virtualBalance.toFixed(2) }}</p>
-      <div class="flex items-center space-x-2">
-        <select v-model="selectedStock" class="border rounded px-2 py-1 border-blue-500 flex-grow">
+      <!-- Cambiado el flex-wrap y spacing para pantallas pequeñas -->
+      <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+        <select v-model="selectedStock" class="border rounded px-2 py-1 border-blue-500 w-full">
           <option value="" disabled>Seleccionar Stock</option>
           <option v-for="stock in availableStocks" :key="stock.ticker" :value="stock">
             {{ stock.ticker }} - {{ stock.company }} (${{ stock.price }})
           </option>
         </select>
-        <input
-          v-model.number="quantity"
-          type="number"
-          placeholder="Cantidad"
-          class="border border-blue-500 rounded px-2 py-1 w-24"
-        />
-        <button
-          @click="addStockToPortfolio"
-          :disabled="!selectedStock || !quantity || quantity <= 0"
-          class="cursor-pointer rounded-lg bg-blue-900 px-3 py-1 font-semibold text-white shadow-sm transition hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        >
-          Añadir
-        </button>
+        <div class="flex gap-2">
+          <input
+            v-model.number="quantity"
+            type="number"
+            placeholder="Cantidad"
+            class="border border-blue-500 rounded px-2 py-1 w-24"
+          />
+          <button
+            @click="addStockToPortfolio"
+            :disabled="!selectedStock || !quantity || quantity <= 0"
+            class="cursor-pointer rounded-lg bg-blue-900 px-3 py-1 font-semibold text-white shadow-sm transition hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 whitespace-nowrap"
+          >
+            Añadir
+          </button>
+        </div>
       </div>
-      <ul v-if="portfolio.length > 0" class="mt-4 border-t pt-4">
+
+      <!-- Lista de portfolio modificada para mejor visualización en móvil -->
+      <ul v-if="portfolio.length > 0" class="mt-4 border-t pt-4 space-y-2">
         <li
           v-for="(item, index) in portfolio"
           :key="index"
-          class="flex justify-between items-center py-2"
+          class="flex flex-col sm:flex-row sm:justify-between sm:items-center py-2 border-b last:border-b-0"
         >
-          <div>
+          <div class="mb-2 sm:mb-0">
             {{ item.stock.ticker }} - {{ item.stock.company }}
-            <span class="text-gray-600 text-sm">({{ item.quantity }} acciones)</span>
+            <span class="text-gray-600 text-sm block sm:inline">({{ item.quantity }} acciones)</span>
           </div>
-          <div class="flex items-center space-x-2">
-            <span class="text-sm"
-              >Costo: ${{ (item.quantity * parseFloat(item.stock.price)).toFixed(2) }}</span
-            >
+          <div class="flex items-center justify-between sm:justify-end gap-2">
+            <span class="text-sm">
+              Costo: ${{ (item.quantity * parseFloat(item.stock.price)).toFixed(2) }}
+            </span>
             <button
               @click="removeStockFromPortfolio(index)"
               class="cursor-pointer rounded-md bg-red-700 px-2 py-1 font-semibold text-white shadow-sm transition hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 text-xs"
@@ -149,12 +154,13 @@ const analyzeDiversification = () => {
       <p v-else class="text-gray-500 mt-2 text-sm">Tu cartera virtual está vacía.</p>
     </div>
 
+    <!-- Sección de Índices modificada para responsividad -->
     <div class="mb-4 border-t pt-4">
       <h3 class="text-xl font-semibold mb-2">Rendimiento vs. Índices</h3>
-      <div class="flex items-center space-x-2 mb-2">
+      <div class="flex flex-col sm:flex-row gap-2 mb-2">
         <select
           v-model="selectedBenchmark"
-          class="border rounded px-2 py-1 border-blue-500 flex-grow text-sm"
+          class="border rounded px-2 py-1 border-blue-500 w-full sm:flex-grow text-sm"
         >
           <option value="" disabled>Seleccionar Índice</option>
           <option value="SP500">S&P 500</option>
@@ -164,7 +170,7 @@ const analyzeDiversification = () => {
         <button
           @click="compareWithIndex"
           :disabled="!selectedBenchmark || portfolio.length === 0"
-          class="cursor-pointer rounded-lg bg-green-900 px-3 py-1 font-semibold text-white shadow-sm transition hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 text-sm"
+          class="cursor-pointer rounded-lg bg-green-900 px-3 py-1 font-semibold text-white shadow-sm transition hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 text-sm whitespace-nowrap"
         >
           Comparar
         </button>
@@ -220,6 +226,13 @@ const analyzeDiversification = () => {
 .investment-simulator {
   max-width: 600px;
   margin: auto;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .investment-simulator {
+    padding: 1rem;
+  }
 }
 
 .investment-simulator h3 {
